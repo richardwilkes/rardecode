@@ -80,7 +80,7 @@ func (h *huffmanDecoder) init(codeLengths []byte) {
 		h.quicklen[i] = bits
 
 		dist := v - h.limit[bits-1]
-		dist >>= (maxCodeLength - bits)
+		dist >>= maxCodeLength - bits
 
 		pos := int(h.pos[bits]) + int(dist)
 		if pos < len(h.symbol) {

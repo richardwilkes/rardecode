@@ -346,7 +346,7 @@ func (a *archive50) readBlockHeader(r sliceReader) (*blockHeader50, error) {
 	}
 	crc := b.uint32()
 
-	hash := crc32.NewIEEE()
+	hsh := crc32.NewIEEE()
 
 	size := int(b.uvarint()) // header size
 	b, err = r.readSlice(7 - len(b) + size)
@@ -355,8 +355,8 @@ func (a *archive50) readBlockHeader(r sliceReader) (*blockHeader50, error) {
 	}
 
 	// check header crc
-	_, _ = hash.Write(b[4:])
-	if crc != hash.Sum32() {
+	_, _ = hsh.Write(b[4:])
+	if crc != hsh.Sum32() {
 		return nil, errBadHeaderCrc
 	}
 

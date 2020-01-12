@@ -139,7 +139,7 @@ type see2Context struct {
 }
 
 func newSee2Context(i uint16) see2Context {
-	return see2Context{i << (periodBits - 4), (periodBits - 4), 4}
+	return see2Context{i << (periodBits - 4), periodBits - 4, 4}
 }
 
 func (s *see2Context) mean() uint32 {

@@ -133,7 +133,6 @@ func (d *decoder29) parseVMFilter(buf []byte) (*filterBlock, error) {
 		if err != nil {
 			return nil, err
 		}
-		//fb.length = int(n)
 		d.flen[d.fnum] = int(n)
 	}
 	fb.length = d.flen[d.fnum]

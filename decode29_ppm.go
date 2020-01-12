@@ -119,17 +119,17 @@ func (d *ppm29Decoder) fill(dr *decodeReader) ([]byte, error) {
 				}
 				offset = offset<<8 | int(c)
 			}
-			len, err := d.m.ReadByte()
+			n, err := d.m.ReadByte()
 			if err != nil {
 				return nil, err
 			}
-			dr.copyBytes(int(len)+32, offset+2)
+			dr.copyBytes(int(n)+32, offset+2)
 		case 5:
-			len, err := d.m.ReadByte()
+			n, err := d.m.ReadByte()
 			if err != nil {
 				return nil, err
 			}
-			dr.copyBytes(int(len)+4, 1)
+			dr.copyBytes(int(n)+4, 1)
 		default:
 			dr.writeByte(d.esc)
 		}

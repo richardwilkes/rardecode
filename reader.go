@@ -478,13 +478,14 @@ func (f *File) Open() (io.ReadCloser, error) {
 	return r, r.pr.init()
 }
 
-// List returns a list of File's in the RAR archive specified by name.
+// List returns a list of Files in the RAR archive specified by name.
 func List(name string, opts ...Option) ([]*File, error) {
 	r, err := OpenReader(name, opts...)
 	if err != nil {
 		return nil, err
 	}
 	pr := r.pr
+	// noinspection GoUnhandledErrorResult
 	defer pr.Close()
 
 	var fl []*File

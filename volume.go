@@ -267,7 +267,11 @@ func nextNewVolName(file string) string {
 			m = m[2:]
 		}
 	}
+	if len(m) < 2 {
+		return file
+	}
 	// extract and increment volume number
+	// noinspection GoNilness
 	lo, hi := m[0], m[1]
 	n, err := strconv.Atoi(file[lo:hi])
 	if err != nil {

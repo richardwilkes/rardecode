@@ -213,7 +213,7 @@ var (
 		{div, true, 2, false},
 		{adc, true, 2, false},
 		{sbb, true, 2, false},
-		{print, false, 0, false},
+		{printFunc, false, 0, false},
 	}
 )
 
@@ -564,7 +564,7 @@ func sbb(v *vm, bm bool, op []operand) {
 	}
 }
 
-func print(v *vm, bm bool, op []operand) {
+func printFunc(v *vm, bm bool, op []operand) {
 	// TODO: ignore print for the moment
 }
 
