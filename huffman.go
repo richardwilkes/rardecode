@@ -80,7 +80,7 @@ func (h *huffmanDecoder) init(codeLengths []byte) {
 		h.quicklen[i] = bits
 
 		dist := v - h.limit[bits-1]
-		dist >>= maxCodeLength - bits
+		dist >>= (maxCodeLength - bits)
 
 		pos := int(h.pos[bits]) + int(dist)
 		if pos < len(h.symbol) {
@@ -96,7 +96,7 @@ func (h *huffmanDecoder) readSym(r bitReader) (int, error) {
 	var v uint16
 	n, err := r.readBits(maxCodeLength)
 	if err != nil {
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return 0, err
 		}
 		// fall back to 1 bit at a time if we read past EOF
@@ -118,7 +118,7 @@ func (h *huffmanDecoder) readSym(r bitReader) (int, error) {
 			return int(h.quicksym[i]), nil
 		}
 
-		for bits = h.min; bits <= maxCodeLength; bits++ {
+		for bits = h.min; bits < maxCodeLength; bits++ {
 			if v < h.limit[bits] {
 				r.unreadBits(maxCodeLength - bits)
 				break
@@ -130,7 +130,7 @@ func (h *huffmanDecoder) readSym(r bitReader) (int, error) {
 	dist >>= maxCodeLength - bits
 
 	pos := int(h.pos[bits]) + int(dist)
-	if pos > len(h.symbol) {
+	if pos >= len(h.symbol) {
 		return 0, errHuffDecodeFailed
 	}
 

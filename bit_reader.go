@@ -1,6 +1,9 @@
 package rardecode
 
-import "io"
+import (
+	"errors"
+	"io"
+)
 
 const (
 	maxUint     = ^uint(0)
@@ -31,7 +34,7 @@ func (r *rar5BitReader) ReadByte() (byte, error) {
 		var err error
 		r.b, err = r.r.bytes()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				err = errDecoderOutOfData
 			}
 			return 0, err
@@ -65,7 +68,7 @@ func (r *rar5BitReader) readBits(n uint8) (int, error) {
 			var err error
 			r.b, err = r.r.bytes()
 			if err != nil {
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					// io.EOF before we reached bit limit
 					err = errDecoderOutOfData
 				}
@@ -102,7 +105,9 @@ type replaceByteReader struct {
 	b  []byte
 }
 
-func (r *replaceByteReader) Read(p []byte) (int, error) { return 0, io.EOF }
+func (r *replaceByteReader) Read(_ []byte) (int, error) {
+	return 0, io.EOF
+}
 
 func (r *replaceByteReader) bytes() ([]byte, error) {
 	*r.rp = r.r

@@ -2,6 +2,7 @@ package rardecode
 
 import (
 	"encoding/binary"
+	"errors"
 	"hash/crc32"
 	"io"
 )
@@ -67,11 +68,11 @@ func filterE8(c byte, v5 bool, buf []byte, offset int64) ([]byte, error) {
 	return buf, nil
 }
 
-func e8FilterV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func e8FilterV3(_ map[int]uint32, _, buf []byte, offset int64) ([]byte, error) {
 	return filterE8(0xe8, false, buf, offset)
 }
 
-func e8e9FilterV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func e8e9FilterV3(_ map[int]uint32, _, buf []byte, offset int64) ([]byte, error) {
 	return filterE8(0xe9, false, buf, offset)
 }
 
@@ -91,7 +92,7 @@ func setBits(buf []byte, pos, count uint, bits uint32) {
 	binary.LittleEndian.PutUint32(buf[pos/8:], n)
 }
 
-func itaniumFilterV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func itaniumFilterV3(_ map[int]uint32, _, buf []byte, offset int64) ([]byte, error) {
 	fileOffset := uint32(offset) >> 4
 
 	for b := buf; len(b) > 21; b = b[16:] {
@@ -138,7 +139,7 @@ func filterDelta(n int, buf []byte) ([]byte, error) {
 	return res, nil
 }
 
-func deltaFilterV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func deltaFilterV3(r map[int]uint32, _, buf []byte, _ int64) ([]byte, error) {
 	return filterDelta(int(r[0]), buf)
 }
 
@@ -149,7 +150,7 @@ func abs(n int) int {
 	return n
 }
 
-func filterRGBV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func filterRGBV3(r map[int]uint32, _, buf []byte, _ int64) ([]byte, error) {
 	width := int(r[0] - 3)
 	posR := int(r[1])
 	if posR < 0 || width < 0 {
@@ -200,7 +201,7 @@ func filterRGBV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, er
 	return res, nil
 }
 
-func filterAudioV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, error) {
+func filterAudioV3(r map[int]uint32, _, buf []byte, _ int64) ([]byte, error) {
 	var res []byte
 	l := len(buf)
 	if cap(buf) >= 2*l {
@@ -240,12 +241,12 @@ func filterAudioV3(r map[int]uint32, global, buf []byte, offset int64) ([]byte, 
 			d[0] = prevDelta
 
 			if byteCount&0x1f == 0 {
-				min := diff[0]
+				minimum := diff[0]
 				diff[0] = 0
 				n := 0
 				for j := 1; j < len(diff); j++ {
-					if diff[j] < min {
-						min = diff[j]
+					if diff[j] < minimum {
+						minimum = diff[j]
 						n = j
 					}
 					diff[j] = 0
@@ -408,7 +409,7 @@ func getV3Filter(code []byte) (v3Filter, error) {
 	}
 
 	f.code, err = readCommands(r)
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		err = nil
 	}
 

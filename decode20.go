@@ -1,6 +1,7 @@
 package rardecode
 
 import (
+	"errors"
 	"io"
 )
 
@@ -149,13 +150,13 @@ func (d *decoder20) fill(dr *decodeReader) error {
 			n, err = d.lz.fill(dr, d.size)
 		}
 		d.size -= n
-		switch err {
-		case nil:
+		switch {
+		case err == nil:
 			continue
-		case errEndOfBlock:
+		case errors.Is(err, errEndOfBlock):
 			d.hdrRead = false
 			continue
-		case io.EOF:
+		case errors.Is(err, io.EOF):
 			err = errDecoderOutOfData
 		}
 		return err

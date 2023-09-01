@@ -397,7 +397,7 @@ func (a *archive50) next(v *volume) (*fileBlockHeader, error) {
 		// get next block header
 		h, err := a.readBlockHeader(v)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				err = io.ErrUnexpectedEOF
 			}
 			return nil, err

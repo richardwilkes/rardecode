@@ -39,7 +39,7 @@ type decoder50 struct {
 
 func (d *decoder50) version() int { return decode50Ver }
 
-func (d *decoder50) init(r byteReader, reset bool, size int64) {
+func (d *decoder50) init(r byteReader, reset bool, _ int64) {
 	d.br.reset(r)
 	d.lastBlock = false
 
@@ -284,7 +284,7 @@ func (d *decoder50) fill(dr *decodeReader) error {
 			default: // sym == 256:
 				err = d.readFilter(dr)
 			}
-		} else if err == io.EOF {
+		} else if errors.Is(err, io.EOF) {
 			// reached end of the block
 			if d.lastBlock {
 				return io.EOF
@@ -292,7 +292,7 @@ func (d *decoder50) fill(dr *decodeReader) error {
 			err = d.readBlockHeader()
 		}
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return errDecoderOutOfData
 			}
 			return err

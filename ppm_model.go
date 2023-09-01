@@ -173,9 +173,9 @@ type state struct {
 	// succ can point to a context or byte in memory.
 	// A context pointer is a positive integer. It is an index into the states
 	// array that points to the first of two states which the context is
-	// marshalled into.
+	// marshaled into.
 	// A byte pointer is a negative integer. The magnitude represents the position
-	// in bytes from the bottom of the memory. As memory is modelled as an array of
+	// in bytes from the bottom of the memory. As memory is modeled as an array of
 	// states, this is used to calculate which state, and where in the state the
 	// byte is stored.
 	// A zero value represents a nil pointer.
@@ -188,7 +188,7 @@ func (s state) uint16() uint16 { return uint16(s.sym) | uint16(s.freq)<<8 }
 // setUint16 stores a uint16 in the sym and freq fields of a state
 func (s *state) setUint16(n uint16) { s.sym = byte(n); s.freq = byte(n >> 8) }
 
-// A context is marshalled into a slice of two states.
+// A context is marshaled into a slice of two states.
 // The first state contains the number of states, and the suffix pointer.
 // If there is only one state, the second state contains that state.
 // If there is more than one state, the second state contains the summFreq
@@ -222,7 +222,7 @@ type subAllocator struct {
 	freeList [nIndexes]int32
 
 	// Instead of bytes, memory is represented by a slice of states.
-	// context's are marshalled to and from a pair of states.
+	// context's are marshaled to and from a pair of states.
 	// multiple bytes are stored in a state.
 	states []state
 }

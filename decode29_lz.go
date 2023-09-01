@@ -9,22 +9,30 @@ const (
 )
 
 var (
-	lengthBase = [28]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20,
-		24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224}
-	lengthExtraBits = [28]uint8{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2,
-		2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5}
+	lengthBase = [28]int{
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20,
+		24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224,
+	}
+	lengthExtraBits = [28]uint8{
+		0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2,
+		2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
+	}
 
-	offsetBase = [60]int{0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96,
+	offsetBase = [60]int{
+		0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96,
 		128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096,
 		6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536, 98304,
 		131072, 196608, 262144, 327680, 393216, 458752, 524288,
 		589824, 655360, 720896, 786432, 851968, 917504, 983040,
 		1048576, 1310720, 1572864, 1835008, 2097152, 2359296, 2621440,
-		2883584, 3145728, 3407872, 3670016, 3932160}
-	offsetExtraBits = [60]uint8{0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6,
+		2883584, 3145728, 3407872, 3670016, 3932160,
+	}
+	offsetExtraBits = [60]uint8{
+		0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6,
 		6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
 		15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
-		18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18}
+		18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+	}
 
 	shortOffsetBase      = [8]int{0, 4, 8, 16, 32, 64, 128, 192}
 	shortOffsetExtraBits = [8]uint8{2, 2, 3, 4, 5, 6, 6, 6}
@@ -129,7 +137,7 @@ func (d *lz29Decoder) readEndOfBlock() error {
 	return errEndOfFile
 }
 
-func (d *lz29Decoder) decodeLength(dr *decodeReader, i int) error {
+func (d *lz29Decoder) decodeLength(_ *decodeReader, i int) error {
 	offset := d.offset[i]
 	copy(d.offset[1:i+1], d.offset[:i])
 	d.offset[0] = offset
@@ -151,7 +159,7 @@ func (d *lz29Decoder) decodeLength(dr *decodeReader, i int) error {
 	return nil
 }
 
-func (d *lz29Decoder) decodeShortOffset(dr *decodeReader, i int) error {
+func (d *lz29Decoder) decodeShortOffset(_ *decodeReader, i int) error {
 	copy(d.offset[1:], d.offset[:])
 	offset := shortOffsetBase[i] + 1
 	bits := shortOffsetExtraBits[i]
@@ -167,7 +175,7 @@ func (d *lz29Decoder) decodeShortOffset(dr *decodeReader, i int) error {
 	return nil
 }
 
-func (d *lz29Decoder) decodeOffset(dr *decodeReader, i int) error {
+func (d *lz29Decoder) decodeOffset(_ *decodeReader, i int) error {
 	d.length = lengthBase[i] + 3
 	bits := lengthExtraBits[i]
 	if bits > 0 {

@@ -49,9 +49,7 @@ const (
 	hashRounds  = 0x40000
 )
 
-var (
-	errUnsupportedDecoder = errors.New("rardecode: unsupported decoder version")
-)
+var errUnsupportedDecoder = errors.New("rardecode: unsupported decoder version")
 
 type blockHeader15 struct {
 	htype    byte // block header type
@@ -114,12 +112,12 @@ func calcAes30Params(pass []uint16, salt []byte) (key, iv []byte) {
 func parseDosTime(t uint32) time.Time {
 	n := int(t)
 	sec := n & 0x1f << 1
-	min := n >> 5 & 0x3f
+	minimum := n >> 5 & 0x3f
 	hr := n >> 11 & 0x1f
 	day := n >> 16 & 0x1f
 	mon := time.Month(n >> 21 & 0x0f)
 	yr := n>>25&0x7f + 1980
-	return time.Date(yr, mon, day, hr, min, sec, 0, time.Local)
+	return time.Date(yr, mon, day, hr, minimum, sec, 0, time.Local)
 }
 
 // decodeName decodes a non-unicode filename from a file header.
@@ -356,7 +354,7 @@ func (a *archive15) readBlockHeader(r sliceReader) (*blockHeader15, error) {
 	// peek to find the header size
 	b, err = r.peek(7)
 	if err != nil {
-		if err == io.EOF && a.encrypted {
+		if errors.Is(err, io.EOF) && a.encrypted {
 			err = io.ErrUnexpectedEOF
 		}
 		return nil, err
@@ -371,7 +369,7 @@ func (a *archive15) readBlockHeader(r sliceReader) (*blockHeader15, error) {
 	}
 	h.data, err = r.readSlice(size)
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			err = io.ErrUnexpectedEOF
 		}
 		return nil, err
@@ -405,7 +403,7 @@ func (a *archive15) next(v *volume) (*fileBlockHeader, error) {
 		h, err := a.readBlockHeader(v)
 		if err != nil {
 			// if reached end of file without an end block try to open next volume
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				a.encrypted = false // reset encryption when opening new volume file
 				err = v.next()
 				if err == nil {

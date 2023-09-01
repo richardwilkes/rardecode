@@ -39,17 +39,17 @@ var (
 // FileHeader represents a single file in a RAR archive.
 type FileHeader struct {
 	Name             string    // file name using '/' as the directory separator
-	IsDir            bool      // is a directory
-	Solid            bool      // is a solid file
-	HostOS           byte      // Host OS the archive was created on
 	Attributes       int64     // Host OS specific file attributes
 	PackedSize       int64     // packed file size (or first block if the file spans volumes)
 	UnPackedSize     int64     // unpacked file size
-	UnKnownSize      bool      // unpacked file size is not known
 	ModificationTime time.Time // modification time (non-zero if set)
 	CreationTime     time.Time // creation time (non-zero if set)
 	AccessTime       time.Time // access time (non-zero if set)
 	Version          int       // file version
+	HostOS           byte      // Host OS the archive was created on
+	IsDir            bool      // is a directory
+	Solid            bool      // is a solid file
+	UnKnownSize      bool      // unpacked file size is not known
 }
 
 // Mode returns an os.FileMode for the file, calculated from the Attributes field.
@@ -60,12 +60,13 @@ func (f *FileHeader) Mode() os.FileMode {
 		m = os.ModeDir
 	}
 	if f.HostOS == HostOSWindows {
-		if f.IsDir {
-			m |= 0777
-		} else if f.Attributes&1 > 0 {
-			m |= 0444 // readonly
-		} else {
-			m |= 0666
+		switch {
+		case f.IsDir:
+			m |= 0o777
+		case f.Attributes&1 > 0:
+			m |= 0o444 // readonly
+		default:
+			m |= 0o666
 		}
 		return m
 	}
@@ -138,7 +139,7 @@ func (f *packedFileReader) nextBlock() error {
 	}
 	h, err := f.r.next(f.v)
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			// archive ended, but file hasn't
 			return errUnexpectedArcEnd
 		}
@@ -159,7 +160,7 @@ func (f *packedFileReader) next() (*fileBlockHeader, error) {
 	for err == nil {
 		err = f.nextBlock()
 	}
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		return nil, err
 	}
 	f.h, err = f.r.next(f.v) // get next file block
@@ -185,7 +186,7 @@ func (f *packedFileReader) Read(p []byte) (int, error) {
 	}
 	n, err := f.v.Read(p)
 	f.n -= int64(n)
-	if err == io.EOF && f.n > 0 {
+	if errors.Is(err, io.EOF) && f.n > 0 {
 		return n, io.ErrUnexpectedEOF
 	}
 	if n > 0 {
@@ -210,7 +211,7 @@ func (f *packedFileReader) bytes() ([]byte, error) {
 		}
 	} else {
 		b, err := f.v.peek(n)
-		if err != nil && err != bufio.ErrBufferFull {
+		if err != nil && !errors.Is(err, bufio.ErrBufferFull) {
 			return nil, err
 		}
 		n = len(b)
@@ -259,7 +260,7 @@ func (l *limitedReader) Read(p []byte) (int, error) {
 	}
 	n, err := l.r.Read(p)
 	l.n -= int64(n)
-	if err == io.EOF && l.n > 0 {
+	if errors.Is(err, io.EOF) && l.n > 0 {
 		return n, l.shortErr
 	}
 	return n, err
@@ -309,7 +310,7 @@ func (cr *checksumReader) Read(p []byte) (int, error) {
 			return n, err
 		}
 	}
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		return n, err
 	}
 	return n, cr.eofError()
@@ -322,7 +323,7 @@ func (cr *checksumReader) bytes() ([]byte, error) {
 			return b, err
 		}
 	}
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		return b, err
 	}
 	return b, cr.eofError()
@@ -364,7 +365,7 @@ func (r *Reader) WriteTo(w io.Writer) (int64, error) {
 			b, err = r.r.bytes()
 		}
 	}
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		err = nil
 	}
 	return n, err
@@ -383,7 +384,7 @@ func (r *Reader) Next() (*FileHeader, error) {
 		for err == nil {
 			_, err = r.dr.bytes()
 		}
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return nil, err
 		}
 	}
@@ -478,22 +479,21 @@ func (f *File) Open() (io.ReadCloser, error) {
 	return r, r.pr.init()
 }
 
-// List returns a list of Files in the RAR archive specified by name.
+// List returns a list of File's in the RAR archive specified by name.
 func List(name string, opts ...Option) ([]*File, error) {
 	r, err := OpenReader(name, opts...)
 	if err != nil {
 		return nil, err
 	}
 	pr := r.pr
-	// noinspection GoUnhandledErrorResult
-	defer pr.Close()
+	defer pr.Close() //nolint:errcheck // Don't care if there is an error on close
 
 	var fl []*File
 	for {
 		// get next file
-		h, err := pr.next()
-		if err != nil {
-			if err == io.EOF {
+		var h *fileBlockHeader
+		if h, err = pr.next(); err != nil {
+			if errors.Is(err, io.EOF) {
 				return fl, nil
 			}
 			return nil, err

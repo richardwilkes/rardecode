@@ -32,7 +32,7 @@ func (d *lz20Decoder) init(br *rarBitReader, table []byte) error {
 	return nil
 }
 
-func (d *lz20Decoder) decodeOffset(dr *decodeReader, i int) error {
+func (d *lz20Decoder) decodeOffset(_ *decodeReader, i int) error {
 	d.length = lengthBase[i] + 3
 	bits := lengthExtraBits[i]
 	if bits > 0 {
@@ -69,7 +69,7 @@ func (d *lz20Decoder) decodeOffset(dr *decodeReader, i int) error {
 	return nil
 }
 
-func (d *lz20Decoder) decodeLength(dr *decodeReader, i int) error {
+func (d *lz20Decoder) decodeLength(_ *decodeReader, i int) error {
 	offset := d.offset[i]
 	copy(d.offset[1:], d.offset[:])
 	d.offset[0] = offset
@@ -100,7 +100,7 @@ func (d *lz20Decoder) decodeLength(dr *decodeReader, i int) error {
 	return nil
 }
 
-func (d *lz20Decoder) decodeShortOffset(dr *decodeReader, i int) error {
+func (d *lz20Decoder) decodeShortOffset(_ *decodeReader, i int) error {
 	copy(d.offset[1:], d.offset[:])
 	offset := shortOffsetBase[i] + 1
 	bits := shortOffsetExtraBits[i]

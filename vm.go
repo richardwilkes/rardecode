@@ -18,9 +18,7 @@ const (
 	vmMask = vmSize - 1
 )
 
-var (
-	errInvalidVMInstruction = errors.New("rardecode: invalid vm instruction")
-)
+var errInvalidVMInstruction = errors.New("rardecode: invalid vm instruction")
 
 type vm struct {
 	ip    uint32         // instruction pointer
@@ -79,8 +77,12 @@ type operand interface {
 // Immediate Operand
 type opI uint32
 
-func (op opI) get(v *vm, bm bool) uint32    { return uint32(op) }
-func (op opI) set(v *vm, bm bool, n uint32) {}
+func (op opI) get(_ *vm, _ bool) uint32 {
+	return uint32(op)
+}
+
+func (op opI) set(_ *vm, _ bool, _ uint32) {
+}
 
 // Direct Operand
 type opD uint32
@@ -128,6 +130,7 @@ func (op opRI) get(v *vm, byteMode bool) uint32 {
 	}
 	return binary.LittleEndian.Uint32(v.m[i:])
 }
+
 func (op opRI) set(v *vm, byteMode bool, n uint32) {
 	i := v.r[op] & vmMask
 	if byteMode {
@@ -150,6 +153,7 @@ func (op opBI) get(v *vm, byteMode bool) uint32 {
 	}
 	return binary.LittleEndian.Uint32(v.m[i:])
 }
+
 func (op opBI) set(v *vm, byteMode bool, n uint32) {
 	i := (v.r[op.r] + op.i) & vmMask
 	if byteMode {
@@ -167,55 +171,53 @@ type command struct {
 	op []operand
 }
 
-var (
-	ops = []struct {
-		f        commandFunc
-		byteMode bool // supports byte mode
-		nops     int  // number of operands
-		jop      bool // is a jump op
-	}{
-		{mov, true, 2, false},
-		{cmp, true, 2, false},
-		{add, true, 2, false},
-		{sub, true, 2, false},
-		{jz, false, 1, true},
-		{jnz, false, 1, true},
-		{inc, true, 1, false},
-		{dec, true, 1, false},
-		{jmp, false, 1, true},
-		{xor, true, 2, false},
-		{and, true, 2, false},
-		{or, true, 2, false},
-		{test, true, 2, false},
-		{js, false, 1, true},
-		{jns, false, 1, true},
-		{jb, false, 1, true},
-		{jbe, false, 1, true},
-		{ja, false, 1, true},
-		{jae, false, 1, true},
-		{push, false, 1, false},
-		{pop, false, 1, false},
-		{call, false, 1, true},
-		{ret, false, 0, false},
-		{not, true, 1, false},
-		{shl, true, 2, false},
-		{shr, true, 2, false},
-		{sar, true, 2, false},
-		{neg, true, 1, false},
-		{pusha, false, 0, false},
-		{popa, false, 0, false},
-		{pushf, false, 0, false},
-		{popf, false, 0, false},
-		{movzx, false, 2, false},
-		{movsx, false, 2, false},
-		{xchg, true, 2, false},
-		{mul, true, 2, false},
-		{div, true, 2, false},
-		{adc, true, 2, false},
-		{sbb, true, 2, false},
-		{printFunc, false, 0, false},
-	}
-)
+var ops = []struct {
+	f        commandFunc
+	nops     int  // number of operands
+	byteMode bool // supports byte mode
+	jop      bool // is a jump op
+}{
+	{mov, 2, true, false},
+	{cmp, 2, true, false},
+	{add, 2, true, false},
+	{sub, 2, true, false},
+	{jz, 1, false, true},
+	{jnz, 1, false, true},
+	{inc, 1, true, false},
+	{dec, 1, true, false},
+	{jmp, 1, false, true},
+	{xor, 2, true, false},
+	{and, 2, true, false},
+	{or, 2, true, false},
+	{test, 2, true, false},
+	{js, 1, false, true},
+	{jns, 1, false, true},
+	{jb, 1, false, true},
+	{jbe, 1, false, true},
+	{ja, 1, false, true},
+	{jae, 1, false, true},
+	{push, 1, false, false},
+	{pop, 1, false, false},
+	{call, 1, false, true},
+	{ret, 0, false, false},
+	{not, 1, true, false},
+	{shl, 2, true, false},
+	{shr, 2, true, false},
+	{sar, 2, true, false},
+	{neg, 1, true, false},
+	{pusha, 0, false, false},
+	{popa, 0, false, false},
+	{pushf, 0, false, false},
+	{popf, 0, false, false},
+	{movzx, 2, false, false},
+	{movsx, 2, false, false},
+	{xchg, 2, true, false},
+	{mul, 2, true, false},
+	{div, 2, true, false},
+	{adc, 2, true, false},
+	{sbb, 2, true, false},
+	{printFunc, 0, false, false},
+}
 
 func mov(v *vm, bm bool, op []operand) {
 	op[0].set(v, bm, op[1].get(v, bm))
@@ -272,13 +274,13 @@ func sub(v *vm, bm bool, op []operand) {
 	op[0].set(v, bm, r)
 }
 
-func jz(v *vm, bm bool, op []operand) {
+func jz(v *vm, _ bool, op []operand) {
 	if v.fl&flagZ > 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func jnz(v *vm, bm bool, op []operand) {
+func jnz(v *vm, _ bool, op []operand) {
 	if v.fl&flagZ == 0 {
 		v.setIP(op[0].get(v, false))
 	}
@@ -307,7 +309,7 @@ func dec(v *vm, bm bool, op []operand) {
 	}
 }
 
-func jmp(v *vm, bm bool, op []operand) {
+func jmp(v *vm, _ bool, op []operand) {
 	v.setIP(op[0].get(v, false))
 }
 
@@ -350,60 +352,59 @@ func test(v *vm, bm bool, op []operand) {
 	}
 }
 
-func js(v *vm, bm bool, op []operand) {
+func js(v *vm, _ bool, op []operand) {
 	if v.fl&flagS > 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func jns(v *vm, bm bool, op []operand) {
+func jns(v *vm, _ bool, op []operand) {
 	if v.fl&flagS == 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func jb(v *vm, bm bool, op []operand) {
+func jb(v *vm, _ bool, op []operand) {
 	if v.fl&flagC > 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func jbe(v *vm, bm bool, op []operand) {
+func jbe(v *vm, _ bool, op []operand) {
 	if v.fl&(flagC|flagZ) > 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func ja(v *vm, bm bool, op []operand) {
+func ja(v *vm, _ bool, op []operand) {
 	if v.fl&(flagC|flagZ) == 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func jae(v *vm, bm bool, op []operand) {
+func jae(v *vm, _ bool, op []operand) {
 	if v.fl&flagC == 0 {
 		v.setIP(op[0].get(v, false))
 	}
 }
 
-func push(v *vm, bm bool, op []operand) {
+func push(v *vm, _ bool, op []operand) {
 	v.r[7] -= 4
 	opRI(7).set(v, false, op[0].get(v, false))
-
 }
 
-func pop(v *vm, bm bool, op []operand) {
+func pop(v *vm, _ bool, op []operand) {
 	op[0].set(v, false, opRI(7).get(v, false))
 	v.r[7] += 4
 }
 
-func call(v *vm, bm bool, op []operand) {
+func call(v *vm, _ bool, op []operand) {
 	v.r[7] -= 4
 	opRI(7).set(v, false, v.ip+1)
 	v.setIP(op[0].get(v, false))
 }
 
-func ret(v *vm, bm bool, op []operand) {
+func ret(v *vm, _ bool, _ []operand) {
 	r7 := v.r[7]
 	if r7 >= vmSize {
 		v.setIP(0xFFFFFFFF) // trigger end of program
@@ -472,7 +473,7 @@ func neg(v *vm, bm bool, op []operand) {
 	}
 }
 
-func pusha(v *vm, bm bool, op []operand) {
+func pusha(v *vm, _ bool, _ []operand) {
 	sp := opD(v.r[7])
 	for _, r := range v.r {
 		sp = (sp - 4) & vmMask
@@ -481,7 +482,7 @@ func pusha(v *vm, bm bool, op []operand) {
 	v.r[7] = uint32(sp)
 }
 
-func popa(v *vm, bm bool, op []operand) {
+func popa(v *vm, _ bool, _ []operand) {
 	sp := opD(v.r[7])
 	for i := 7; i >= 0; i-- {
 		v.r[i] = sp.get(v, false)
@@ -489,21 +490,21 @@ func popa(v *vm, bm bool, op []operand) {
 	}
 }
 
-func pushf(v *vm, bm bool, op []operand) {
+func pushf(v *vm, _ bool, _ []operand) {
 	v.r[7] -= 4
 	opRI(7).set(v, false, v.fl)
 }
 
-func popf(v *vm, bm bool, op []operand) {
+func popf(v *vm, _ bool, _ []operand) {
 	v.fl = opRI(7).get(v, false)
 	v.r[7] += 4
 }
 
-func movzx(v *vm, bm bool, op []operand) {
+func movzx(v *vm, _ bool, op []operand) {
 	op[0].set(v, false, op[1].get(v, true))
 }
 
-func movsx(v *vm, bm bool, op []operand) {
+func movsx(v *vm, _ bool, op []operand) {
 	op[0].set(v, false, uint32(int8(op[1].get(v, true))))
 }
 
@@ -564,7 +565,7 @@ func sbb(v *vm, bm bool, op []operand) {
 	}
 }
 
-func printFunc(v *vm, bm bool, op []operand) {
+func printFunc(_ *vm, _ bool, _ []operand) {
 	// TODO: ignore print for the moment
 }
 
