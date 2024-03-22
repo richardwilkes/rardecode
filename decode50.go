@@ -168,7 +168,7 @@ func (d *decoder50) readFilter(dr *decodeReader) error {
 		if err != nil {
 			return err
 		}
-		fb.filter = func(buf []byte, offset int64) ([]byte, error) { return filterDelta(n+1, buf) }
+		fb.filter = func(buf []byte, _ int64) ([]byte, error) { return filterDelta(n+1, buf) }
 	case 1:
 		fb.filter = func(buf []byte, offset int64) ([]byte, error) { return filterE8(0xe8, true, buf, offset) }
 	case 2:
